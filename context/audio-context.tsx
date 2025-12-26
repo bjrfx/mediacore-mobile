@@ -84,6 +84,14 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         );
         soundRef.current = sound;
         
+        // Ensure frequent progress updates and reliable callback registration
+        try {
+          await sound.setProgressUpdateIntervalAsync(250);
+          sound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
+        } catch (e) {
+          console.log('Error configuring progress updates', e);
+        }
+        
         if (status.isLoaded) {
            setDuration(status.durationMillis || 0);
         } else if (status.error) {
