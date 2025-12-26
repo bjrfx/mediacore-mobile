@@ -22,11 +22,11 @@ import React, { useEffect } from 'react';
 import { Platform, Pressable, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from '../ui/icon-symbol';
@@ -47,10 +47,13 @@ export function MiniPlayer() {
   const { togglePlay } = useAudioContext();
   const setIsPlaying = usePlayerStore((state) => state.setIsPlaying);
   const setCurrentTrack = usePlayerStore((state) => state.setCurrentTrack);
+  const playNext = usePlayerStore((state) => state.playNext);
+  const playPrevious = usePlayerStore((state) => state.playPrevious);
 
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(1);
+  const translateX = useSharedValue(0);
 
   const progress = duration > 0 ? (position / duration) * 100 : 0;
   
@@ -112,7 +115,11 @@ export function MiniPlayer() {
     });
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }, { translateY: translateY.value }],
+    transform: [
+      { scale: scale.value },
+      { translateY: translateY.value },
+      { translateX: translateX.value },
+    ],
     opacity: opacity.value,
   }));
 
@@ -122,9 +129,59 @@ export function MiniPlayer() {
       translateY.value = withTiming(0, { duration: 180 });
       opacity.value = withTiming(1, { duration: 180 });
       scale.value = withTiming(1, { duration: 180 });
+      translateX.value = withTiming(0, { duration: 180 });
     }
-  }, [currentTrack, opacity, scale, translateY]);
+  }, [currentTrack, opacity, scale, translateY, translateX]);
 
+  // Horizontal swipe for previous/next track
+  const unavailableHaptic = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 60);
+      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 120);
+    }
+  };
+
+  const triggerNext = () => {
+    const next = playNext();
+    if (!next) {
+      unavailableHaptic();
+    }
+  };
+
+  const triggerPrevious = () => {
+    const prev = playPrevious();
+    if (!prev) {
+      unavailableHaptic();
+    }
+  };
+
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX(12)
+    .onUpdate((event) => {
+      if (Math.abs(event.translationX) > Math.abs(event.translationY)) {
+        const dx = Math.max(-80, Math.min(80, event.translationX));
+        translateX.value = dx;
+      }
+    })
+    .onEnd((event) => {
+      const dx = event.translationX;
+      const isHorizontal = Math.abs(dx) > Math.abs(event.translationY);
+      const threshold = 80;
+      if (isHorizontal && (dx > threshold || event.velocityX > 800)) {
+        translateX.value = withTiming(40, { duration: 120 }, () => {
+          runOnJS(triggerNext)();
+          translateX.value = withSpring(0, { damping: 18, stiffness: 180 });
+        });
+      } else if (isHorizontal && (dx < -threshold || event.velocityX < -800)) {
+        translateX.value = withTiming(-40, { duration: 120 }, () => {
+          runOnJS(triggerPrevious)();
+          translateX.value = withSpring(0, { damping: 18, stiffness: 180 });
+        });
+      } else {
+        translateX.value = withSpring(0, { damping: 18, stiffness: 180 });
+      }
+    });
   if (!currentTrack) return null;
 
   return (
@@ -132,7 +189,7 @@ export function MiniPlayer() {
       className="absolute left-0 right-0 px-3"
       style={{ bottom: bottomOffset }}
     >
-      <GestureDetector gesture={panGesture}>
+      <GestureDetector gesture={Gesture.Simultaneous(panGesture, swipeGesture)}>
         <AnimatedPressable
           onPress={handlePress}
           onPressIn={handlePressIn}
