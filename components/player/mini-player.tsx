@@ -123,7 +123,7 @@ export function MiniPlayer() {
       opacity.value = withTiming(1, { duration: 180 });
       scale.value = withTiming(1, { duration: 180 });
     }
-  }, [currentTrack?.id]);
+  }, [currentTrack, opacity, scale, translateY]);
 
   if (!currentTrack) return null;
 

@@ -11,7 +11,6 @@
 
 import { BrandColors, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { usePlayerStore } from '@/store/player-store';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -134,10 +133,8 @@ function TabItem({ route, index, state, navigation, descriptors }: TabItemProps)
 export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
-  const currentTrack = usePlayerStore((state) => state.currentTrack);
   
-  // Add extra padding when mini-player is visible
-  const miniPlayerOffset = currentTrack ? 72 : 0;
+  // Add extra padding when mini-player is visible (handled by MiniPlayer component positioning)
 
   return (
     <View

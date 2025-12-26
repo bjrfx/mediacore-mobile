@@ -17,11 +17,10 @@ import { Body, Caption, Title } from '@/components/ui/typography';
 import { BrandColors, Colors } from '@/constants/theme';
 import { CATEGORIES, MOCK_DATA } from '@/data/mock';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useRouter } from 'expo-router';
 import { Dimensions, FlatList, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+Dimensions.get('window');
 
 // Quick action buttons for common actions
 const QUICK_ACTIONS = [
@@ -35,7 +34,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'dark'];
-  const router = useRouter();
   
   const featuredItem = MOCK_DATA[3];
   const trendingItems = MOCK_DATA.slice(0, 4);

@@ -1,11 +1,10 @@
 import React, { useEffect } from 'react';
 import { ViewStyle } from 'react-native';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withDelay, 
-  withTiming,
-  WithTimingConfig
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withTiming
 } from 'react-native-reanimated';
 
 interface FadeInProps {
@@ -31,7 +30,7 @@ export function FadeIn({
   useEffect(() => {
     opacity.value = withDelay(delay, withTiming(1, { duration }));
     translateY.value = withDelay(delay, withTiming(0, { duration }));
-  }, [delay, duration]);
+  }, [delay, duration, opacity, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {

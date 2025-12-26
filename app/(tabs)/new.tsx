@@ -225,7 +225,7 @@ export default function NewScreen() {
                   <View className="flex-1 ml-3">
                     <Body className="font-semibold">Get notified</Body>
                     <Caption>
-                      We'll let you know when new content drops
+                      We&apos;ll let you know when new content drops
                     </Caption>
                   </View>
                   <TouchableOpacity className="px-4 py-2 rounded-full bg-brand-primary">

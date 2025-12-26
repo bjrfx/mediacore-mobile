@@ -150,7 +150,7 @@ export default function SearchScreen() {
                     color={colors.textTertiary}
                   />
                   <Body className="mt-4 text-secondary dark:text-secondary-dark">
-                    No results for "{searchQuery}"
+                    No results for &quot;{searchQuery}&quot;
                   </Body>
                   <Caption className="mt-2 text-center">
                     Try searching for something else
