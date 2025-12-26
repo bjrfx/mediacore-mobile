@@ -1,0 +1,195 @@
+/**
+ * Enhanced Mini Player
+ * Inspired by: Spotify's expandable player, Apple Music's blur effects
+ * 
+ * Features:
+ * - Glassmorphic design with blur
+ * - Smooth progress indicator
+ * - Gesture support for expanding
+ * - Animated transitions
+ */
+
+import { BrandColors, Colors } from '@/constants/theme';
+import { useAudioContext } from '@/context/audio-context';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { usePlayerStore } from '@/store/player-store';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Platform, Pressable, TouchableOpacity, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IconSymbol } from '../ui/icon-symbol';
+import { Body, Caption } from '../ui/typography';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+export function MiniPlayer() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'dark'];
+  
+  const currentTrack = usePlayerStore((state) => state.currentTrack);
+  const isPlaying = usePlayerStore((state) => state.isPlaying);
+  const position = usePlayerStore((state) => state.position);
+  const duration = usePlayerStore((state) => state.duration);
+  const { togglePlay } = useAudioContext();
+
+  const scale = useSharedValue(1);
+
+  if (!currentTrack) return null;
+
+  const progress = duration > 0 ? (position / duration) * 100 : 0;
+  
+  // Position above the custom bottom nav
+  const bottomOffset = 80 + insets.bottom;
+
+  const handlePress = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    router.push('/player');
+  };
+
+  const handlePlayPause = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    togglePlay();
+  };
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <View
+      className="absolute left-0 right-0 px-3"
+      style={{ bottom: bottomOffset }}
+    >
+      <AnimatedPressable
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={animatedStyle}
+      >
+        <View className="rounded-2xl overflow-hidden border border-white/10">
+          {/* Glass background */}
+          {Platform.OS === 'ios' ? (
+            <BlurView
+              intensity={80}
+              tint={colorScheme === 'dark' ? 'dark' : 'light'}
+              className="absolute inset-0"
+            />
+          ) : (
+            <View className="absolute inset-0 bg-surface/95 dark:bg-surface-dark/95" />
+          )}
+          
+          {/* Gradient overlay for depth */}
+          <LinearGradient
+            colors={
+              colorScheme === 'dark'
+                ? ['rgba(139,92,246,0.1)', 'rgba(139,92,246,0.05)', 'transparent']
+                : ['rgba(139,92,246,0.08)', 'rgba(139,92,246,0.02)', 'transparent']
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            className="absolute inset-0"
+          />
+
+          {/* Progress bar at top */}
+          <View className="h-0.5 bg-white/10">
+            <Animated.View
+              className="h-full bg-brand-primary"
+              style={{ width: `${progress}%` }}
+            />
+          </View>
+
+          {/* Content */}
+          <View className="flex-row items-center p-3">
+            {/* Artwork with glow */}
+            <View className="relative">
+              <View
+                className="absolute inset-0 rounded-xl bg-brand-primary/30 blur-xl"
+                style={{ transform: [{ scale: 1.2 }] }}
+              />
+              <Image
+                source={{ uri: currentTrack.coverUrl }}
+                style={{ width: 48, height: 48, borderRadius: 12 }}
+                contentFit="cover"
+                transition={200}
+              />
+              {/* Playing indicator */}
+              {isPlaying && (
+                <View className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-brand-primary items-center justify-center">
+                  <View className="w-1.5 h-1.5 rounded-full bg-white" />
+                </View>
+              )}
+            </View>
+
+            {/* Track info */}
+            <View className="flex-1 mx-3">
+              <Body
+                numberOfLines={1}
+                className="text-sm font-semibold text-primary dark:text-primary-dark"
+              >
+                {currentTrack.title}
+              </Body>
+              <Caption numberOfLines={1} className="text-xs mt-0.5">
+                {currentTrack.artist}
+              </Caption>
+            </View>
+
+            {/* Controls */}
+            <View className="flex-row items-center gap-2">
+              {/* Play/Pause button with gradient background */}
+              <TouchableOpacity
+                onPress={handlePlayPause}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                className="w-10 h-10 rounded-full items-center justify-center overflow-hidden"
+              >
+                <LinearGradient
+                  colors={[BrandColors.primary, BrandColors.primaryDark]}
+                  className="absolute inset-0"
+                />
+                <IconSymbol
+                  name={isPlaying ? 'pause.fill' : 'play.fill'}
+                  size={20}
+                  color="#FFFFFF"
+                />
+              </TouchableOpacity>
+
+              {/* Next button */}
+              <TouchableOpacity
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                className="w-10 h-10 items-center justify-center"
+              >
+                <IconSymbol
+                  name="forward.end.fill"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </AnimatedPressable>
+    </View>
+  );
+}
