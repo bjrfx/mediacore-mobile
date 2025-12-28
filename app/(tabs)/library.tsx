@@ -21,6 +21,7 @@ import { BrandColors, Colors } from '@/constants/theme';
 import { MOCK_DATA } from '@/data/mock';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePlayerStore } from '@/store/player-store';
+import { useLibraryStore } from '@/store/library-store';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { FlatList, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -35,42 +36,44 @@ const FILTERS = [
   { id: 'downloads', label: 'Downloads', icon: 'arrow.down.circle' },
 ];
 
-// Library sections with icons
-const LIBRARY_SECTIONS = [
-  {
-    id: 'liked',
-    title: 'Liked Songs',
-    subtitle: '24 songs',
-    icon: 'heart.fill',
-    color: BrandColors.tertiary,
-    gradient: [BrandColors.tertiary, BrandColors.primary] as const,
-  },
-  {
-    id: 'recent',
-    title: 'Recently Played',
-    subtitle: 'Updated today',
-    icon: 'clock.fill',
-    color: BrandColors.secondary,
-    gradient: [BrandColors.secondary, BrandColors.primaryDark] as const,
-  },
-  {
-    id: 'queue',
-    title: 'Play Queue',
-    subtitle: 'Up next',
-    icon: 'list.bullet',
-    color: BrandColors.primary,
-    gradient: [BrandColors.primary, BrandColors.tertiary] as const,
-  },
-];
-
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'dark'];
   const [activeFilter, setActiveFilter] = useState('all');
   const queue = usePlayerStore((state) => state.queue);
+  const history = usePlayerStore((state) => state.history);
+  const likedSongs = useLibraryStore((state) => state.likedSongs);
 
-  const savedItems = MOCK_DATA.slice(0, 4);
+  // Library sections with icons
+  const LIBRARY_SECTIONS = [
+    {
+      id: 'liked',
+      title: 'Liked Songs',
+      subtitle: `${likedSongs.length} songs`,
+      icon: 'heart.fill',
+      color: BrandColors.tertiary,
+      gradient: [BrandColors.tertiary, BrandColors.primary] as const,
+    },
+    {
+      id: 'recent',
+      title: 'Recently Played',
+      subtitle: 'Updated today',
+      icon: 'clock.fill',
+      color: BrandColors.secondary,
+      gradient: [BrandColors.secondary, BrandColors.primaryDark] as const,
+    },
+    {
+      id: 'queue',
+      title: 'Play Queue',
+      subtitle: `${queue.length} items`,
+      icon: 'list.bullet',
+      color: BrandColors.primary,
+      gradient: [BrandColors.primary, BrandColors.tertiary] as const,
+    },
+  ];
+
+  const savedItems = likedSongs.slice(0, 4);
   const downloadedItems: typeof MOCK_DATA = []; // Empty for demo
 
   return (

@@ -16,10 +16,11 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Section } from '@/components/ui/section';
 import { Body, Caption, Title } from '@/components/ui/typography';
 import { BrandColors, Colors } from '@/constants/theme';
-import { CATEGORIES, MOCK_DATA } from '@/data/mock';
+import { CATEGORIES, MediaItem } from '@/data/mock';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { publicApi } from '@/services/api';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Dimensions,
     ScrollView,
@@ -62,10 +63,54 @@ export default function SearchScreen() {
   const colors = Colors[colorScheme ?? 'dark'];
   const [searchQuery, setSearchQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [allMedia, setAllMedia] = useState<MediaItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const feedData = await publicApi.getFeed({ limit: 50 }); // Fetch more for search
+      
+      if (feedData && feedData.data && Array.isArray(feedData.data)) {
+        const mappedItems: MediaItem[] = feedData.data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          artist: item.artistName || 'Unknown Artist',
+          album: 'Single',
+          coverUrl: item.thumbnailUrl || 'https://via.placeholder.com/300',
+          duration: formatDuration(item.duration),
+          durationMs: (item.duration || 0) * 1000,
+          type: item.type === 'video' ? 'video' : 'audio',
+          category: item.type === 'video' ? 'Video' : 'Music',
+          genre: 'Unknown',
+          audioUrl: encodeURI(item.fileUrl || item.streamUrl || ''),
+          videoUrl: encodeURI(item.fileUrl || item.streamUrl || ''),
+          streamType: item.isHls ? 'hls' : 'file',
+          releaseDate: item.createdAt,
+        }));
+        setAllMedia(mappedItems);
+      }
+    } catch (err) {
+      console.error('Failed to fetch search data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDuration = (seconds: number) => {
+    if (!seconds) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Filter results based on search query
   const searchResults = searchQuery
-    ? MOCK_DATA.filter(
+    ? allMedia.filter(
         (item) =>
           item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.artist.toLowerCase().includes(searchQuery.toLowerCase())

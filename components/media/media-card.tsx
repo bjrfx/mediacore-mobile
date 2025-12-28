@@ -171,8 +171,12 @@ export function MediaCard({
           <Caption className="text-xs" numberOfLines={1}>
             {item.artist}
           </Caption>
-          <View className="w-1 h-1 rounded-full bg-secondary dark:bg-secondary-dark mx-2" />
-          <Caption className="text-xs">{item.duration}</Caption>
+          {item.duration ? (
+            <>
+              <View className="w-1 h-1 rounded-full bg-secondary dark:bg-secondary-dark mx-2" />
+              <Caption className="text-xs">{item.duration}</Caption>
+            </>
+          ) : null}
         </View>
       </View>
 

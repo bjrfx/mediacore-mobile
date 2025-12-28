@@ -30,6 +30,9 @@ export interface MediaItem {
   
   // Captions/Subtitles
   captions?: CaptionTrack[];
+  
+  // UI flags
+  isNew?: boolean;
 }
 
 export interface MediaQuality {

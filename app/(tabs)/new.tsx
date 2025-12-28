@@ -15,24 +15,16 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Section } from '@/components/ui/section';
 import { Body, Caption, Subtitle, Title } from '@/components/ui/typography';
 import { BrandColors, Colors } from '@/constants/theme';
-import { MOCK_DATA } from '@/data/mock';
+import { MediaItem } from '@/data/mock';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { publicApi } from '@/services/api';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Dimensions, FlatList, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Dimensions, FlatList, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Simulated new releases with dates
-const NEW_RELEASES = MOCK_DATA.map((item, index) => ({
-  ...item,
-  releaseDate: new Date(Date.now() - index * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  }),
-  isNew: index < 2,
-}));
 
 // Featured collections
 const FEATURED_COLLECTIONS = [
@@ -63,9 +55,67 @@ export default function NewScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'dark'];
+  
+  const [newReleases, setNewReleases] = useState<MediaItem[]>([]);
+  const [videoItems, setVideoItems] = useState<MediaItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const newItems = NEW_RELEASES;
-  const videoItems = MOCK_DATA.filter((item) => item.type === 'video');
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const feedData = await publicApi.getFeed({ 
+        limit: 20,
+        orderBy: 'createdAt',
+        order: 'desc'
+      });
+      
+      if (feedData && feedData.data && Array.isArray(feedData.data)) {
+        const mappedItems: MediaItem[] = feedData.data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          artist: item.artistName || 'Unknown Artist',
+          album: 'Single',
+          coverUrl: item.thumbnailUrl || 'https://via.placeholder.com/300',
+          duration: formatDuration(item.duration),
+          durationMs: (item.duration || 0) * 1000,
+          type: item.type === 'video' ? 'video' : 'audio',
+          category: item.type === 'video' ? 'Video' : 'Music',
+          genre: 'Unknown',
+          audioUrl: encodeURI(item.fileUrl || item.streamUrl || ''),
+          videoUrl: encodeURI(item.fileUrl || item.streamUrl || ''),
+          streamType: item.isHls ? 'hls' : 'file',
+          releaseDate: item.createdAt,
+          isNew: true, // Mark as new since we fetched latest
+        }));
+        
+        setNewReleases(mappedItems);
+        setVideoItems(mappedItems.filter(item => item.type === 'video'));
+      }
+    } catch (err) {
+      console.error('Failed to fetch new releases:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDuration = (seconds: number) => {
+    if (!seconds) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  if (loading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background dark:bg-background-dark">
+        <ActivityIndicator size="large" color={BrandColors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-background dark:bg-background-dark">
@@ -128,7 +178,7 @@ export default function NewScreen() {
           }
         >
           <View className="px-4">
-            {newItems.slice(0, 5).map((item, index) => (
+            {newReleases.slice(0, 5).map((item, index) => (
               <FadeIn key={item.id} delay={200 + index * 50}>
                 <AnimatedPressable className="flex-row items-center mb-4">
                   {/* Artwork with "NEW" badge */}

@@ -13,6 +13,7 @@
 9. [File Management Endpoints](#file-management-endpoints)
 10. [User & Subscription Endpoints](#user--subscription-endpoints)
 11. [Error Handling](#error-handling)
+12. [Feature Implementation Details](#feature-implementation-details)
 
 ---
 
@@ -236,4 +237,62 @@ Common HTTP Status Codes:
 | `401` | Unauthorized | Missing or invalid token/API key |
 | `403` | Forbidden | Valid token but insufficient permissions (e.g., User trying to access Admin) |
 | `404` | Not Found | Resource does not exist |
+
+---
+
+## Feature Implementation Details
+
+This section explains specific user-facing features and their technical implementation.
+
+### 1. Share Functionality
+**API Endpoint:** `GET /api/share/:id`
+
+- **Purpose:** Generates SEO-friendly metadata for social sharing (Open Graph, Twitter Cards).
+- **Flow:**
+  1. Frontend requests share data for a media ID.
+  2. Backend fetches media details + artist name.
+  3. Backend returns a JSON object with:
+     - `shareUrl`: Direct link to the content (e.g., `https://app.mediacore.in/watch/123`).
+     - `embedCode`: HTML iframe code for embedding the player.
+     - `og`: Open Graph metadata (title, description, image).
+  4. Frontend uses the **Web Share API** (on mobile) or copies the `shareUrl` (on desktop).
+
+### 2. "More Info" & Details
+**API Endpoint:** `GET /api/media/:id`
+
+- **Purpose:** Fetches comprehensive details for the "More Info" modal or detailed view.
+- **Data Retrieved:**
+  - Full metadata (Title, Description, Duration, Release Year).
+  - `availableLanguages`: List of language codes if the media is part of a multi-language content group.
+  - Streaming URLs (HLS/File).
+- **Frontend Behavior:** The card often has basic info; clicking "More Info" triggers this call to get the full synopsis and related data.
+
+### 3. Likes & Favorites
+**Storage:** **Client-Side Only (Local Storage)**
+
+- **Current Implementation:**
+  - There is **NO** backend API for storing favorites/likes.
+  - Likes are managed entirely in the frontend using `libraryStore` (Zustand).
+  - Data is persisted in the browser's `localStorage` under the key `library-storage`.
+- **Note:** Clearing browser cache will remove user favorites. This is a candidate for future backend integration (`user_favorites` table).
+
+### 4. Card Fetching (Feed)
+**API Endpoint:** `GET /api/feed`
+
+- **Purpose:** Populates the main home feed and discovery grids.
+- **Mechanism:**
+  - Frontend calls `publicApi.getMedia({ type, language, limit })`.
+  - Backend performs a `JOIN` between `media` and `artists` tables.
+  - **Response Optimization:** Returns a normalized list of media objects tailored for UI cards:
+    ```json
+    {
+      "id": "...",
+      "title": "...",
+      "artistName": "...", // Joined from artists table
+      "thumbnailUrl": "...",
+      "duration": 180
+    }
+    ```
+  - **Pagination:** Supported via `limit` query parameter (default 50).
+
 | `500` | Server Error | Internal server error |

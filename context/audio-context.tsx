@@ -75,6 +75,12 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         soundRef.current = null;
       }
 
+      // If video, let PlayerScreen handle playback via Video component
+      if (currentTrack.type === 'video') {
+        setIsBuffering(false);
+        return;
+      }
+
       try {
         setIsBuffering(true);
         const { sound, status } = await Audio.Sound.createAsync(

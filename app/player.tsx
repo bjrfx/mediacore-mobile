@@ -20,23 +20,24 @@ import { useAudioContext } from '@/context/audio-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePlayerStore } from '@/store/player-store';
 import Slider from '@react-native-community/slider';
+import { ResizeMode, Video } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    Platform,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Platform,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -63,6 +64,9 @@ export default function PlayerScreen() {
   const duration = usePlayerStore((state) => state.duration);
   const playbackRate = usePlayerStore((state) => state.playbackRate);
   const isBuffering = usePlayerStore((state) => state.isBuffering);
+  const setPosition = usePlayerStore((state) => state.setPosition);
+  const setDuration = usePlayerStore((state) => state.setDuration);
+  const setIsPlaying = usePlayerStore((state) => state.setIsPlaying);
 
   // Local state
   const [isSliding, setIsSliding] = useState(false);
@@ -70,6 +74,8 @@ export default function PlayerScreen() {
   const [isLiked, setIsLiked] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
+  
+  const videoRef = useRef<Video>(null);
 
   // Animation values
   const artworkScale = useSharedValue(1);
@@ -91,7 +97,12 @@ export default function PlayerScreen() {
   };
 
   const handleSlidingComplete = async (value: number) => {
-    await seekTo(value);
+    if (currentTrack?.type === 'video' && videoRef.current) {
+      await videoRef.current.setPositionAsync(value);
+      setPosition(value); // Update store immediately
+    } else {
+      await seekTo(value);
+    }
     setIsSliding(false);
   };
 
@@ -127,8 +138,19 @@ export default function PlayerScreen() {
     }
   };
 
-  const handlePlayPause = () => {
-    togglePlay();
+  const handlePlayPause = async () => {
+    if (currentTrack?.type === 'video' && videoRef.current) {
+      if (isPlaying) {
+        await videoRef.current.pauseAsync();
+        setIsPlaying(false);
+      } else {
+        await videoRef.current.playAsync();
+        setIsPlaying(true);
+      }
+    } else {
+      togglePlay();
+    }
+    
     playButtonScale.value = withSpring(0.9, { damping: 15, stiffness: 200 });
     setTimeout(() => {
       playButtonScale.value = withSpring(1, { damping: 15, stiffness: 200 });
@@ -228,12 +250,37 @@ export default function PlayerScreen() {
           ]}
           className="rounded-3xl overflow-hidden mb-8"
         >
-          <Image
-            source={{ uri: currentTrack.coverUrl }}
-            style={{ width: '100%', height: '100%' }}
-            contentFit="cover"
-            transition={500}
-          />
+          {currentTrack.type === 'video' ? (
+            <Video
+              ref={videoRef}
+              source={{ uri: currentTrack.videoUrl || currentTrack.audioUrl }}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode={ResizeMode.CONTAIN}
+              shouldPlay={isPlaying}
+              isLooping={false}
+              useNativeControls={false}
+              onPlaybackStatusUpdate={(status) => {
+                if (status.isLoaded) {
+                  if (!isSliding) {
+                    setPosition(status.positionMillis);
+                    if (status.durationMillis) {
+                      setDuration(status.durationMillis);
+                    }
+                  }
+                  if (status.didJustFinish) {
+                    setIsPlaying(false);
+                  }
+                }
+              }}
+            />
+          ) : (
+            <Image
+              source={{ uri: currentTrack.coverUrl }}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+              transition={500}
+            />
+          )}
           {/* Media type indicator */}
           {currentTrack.type === 'video' && (
             <View className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-black/50 flex-row items-center">

@@ -15,10 +15,12 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Section } from '@/components/ui/section';
 import { Body, Caption, Title } from '@/components/ui/typography';
 import { BrandColors, Colors } from '@/constants/theme';
-import { CATEGORIES, MOCK_DATA } from '@/data/mock';
+import { CATEGORIES, MediaItem } from '@/data/mock';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { publicApi } from '@/services/api';
 import { useRouter } from 'expo-router';
-import { Dimensions, FlatList, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Dimensions, FlatList, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 Dimensions.get('window');
@@ -37,10 +39,64 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'dark'];
   
-  const featuredItem = MOCK_DATA[3];
-  const trendingItems = MOCK_DATA.slice(0, 4);
-  const recentItems = MOCK_DATA.slice(2, 6);
-  const forYouItems = [...MOCK_DATA].reverse().slice(0, 4);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [featuredItem, setFeaturedItem] = useState<MediaItem | null>(null);
+  const [trendingItems, setTrendingItems] = useState<MediaItem[]>([]);
+  const [recentItems, setRecentItems] = useState<MediaItem[]>([]);
+  const [forYouItems, setForYouItems] = useState<MediaItem[]>([]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const feedData = await publicApi.getFeed({ limit: 20 });
+      
+      if (feedData && feedData.data && Array.isArray(feedData.data)) {
+        // Map API data to MediaItem structure
+        const mappedItems: MediaItem[] = feedData.data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          artist: item.artistName || 'Unknown Artist',
+          album: 'Single', // Default as API doesn't always return album
+          coverUrl: item.thumbnailUrl || 'https://via.placeholder.com/300',
+          duration: formatDuration(item.duration),
+          durationMs: (item.duration || 0) * 1000,
+          type: item.type === 'video' ? 'video' : 'audio',
+          category: item.type === 'video' ? 'Video' : 'Music',
+          genre: 'Unknown',
+          audioUrl: encodeURI(item.fileUrl || item.streamUrl || ''),
+          videoUrl: encodeURI(item.fileUrl || item.streamUrl || ''),
+          streamType: item.isHls ? 'hls' : 'file',
+          releaseDate: item.createdAt,
+        }));
+
+        if (mappedItems.length > 0) {
+          setFeaturedItem(mappedItems[0]);
+          setTrendingItems(mappedItems.slice(0, 5));
+          setRecentItems(mappedItems.slice(5, 10));
+          setForYouItems(mappedItems.slice(10, 15));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
+      setError('Failed to load content');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDuration = (seconds: number) => {
+    if (!seconds) return '';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -49,6 +105,14 @@ export default function HomeScreen() {
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
   };
+
+  if (loading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background dark:bg-background-dark">
+        <ActivityIndicator size="large" color={BrandColors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-background dark:bg-background-dark">
@@ -111,16 +175,18 @@ export default function HomeScreen() {
         </FadeIn>
 
         {/* Featured Hero */}
-        <FadeIn delay={200}>
-          <View className="px-4 mb-6">
-            <TouchableOpacity
-              className="rounded-3xl overflow-hidden"
-              activeOpacity={0.9}
-            >
-              <MediaCard item={featuredItem} variant="featured" />
-            </TouchableOpacity>
-          </View>
-        </FadeIn>
+        {featuredItem && (
+          <FadeIn delay={200}>
+            <View className="px-4 mb-6">
+              <TouchableOpacity
+                className="rounded-3xl overflow-hidden"
+                activeOpacity={0.9}
+              >
+                <MediaCard item={featuredItem} variant="featured" />
+              </TouchableOpacity>
+            </View>
+          </FadeIn>
+        )}
 
         {/* Trending Now */}
         <Section
@@ -142,6 +208,11 @@ export default function HomeScreen() {
               )}
               contentContainerStyle={{ paddingHorizontal: 16 }}
               ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+              ListEmptyComponent={
+                <View className="px-4">
+                  <Body className="text-secondary dark:text-secondary-dark">No trending items</Body>
+                </View>
+              }
             />
           </FadeIn>
         </Section>
@@ -184,6 +255,11 @@ export default function HomeScreen() {
               )}
               contentContainerStyle={{ paddingHorizontal: 16 }}
               ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+              ListEmptyComponent={
+                <View className="px-4">
+                  <Body className="text-secondary dark:text-secondary-dark">No items for you</Body>
+                </View>
+              }
             />
           </FadeIn>
         </Section>
@@ -191,13 +267,18 @@ export default function HomeScreen() {
         {/* Recently Played */}
         <Section title="Recently Played">
           <View className="px-4">
-            {recentItems.map((item, index) => (
-              <FadeIn key={item.id} delay={500 + index * 50}>
-                <MediaCard item={item} variant="vertical" />
-              </FadeIn>
-            ))}
+            {recentItems.length > 0 ? (
+              recentItems.map((item, index) => (
+                <FadeIn key={item.id} delay={500 + index * 50}>
+                  <MediaCard item={item} variant="vertical" />
+                </FadeIn>
+              ))
+            ) : (
+               <Body className="text-secondary dark:text-secondary-dark">No recent items</Body>
+            )}
           </View>
         </Section>
+
       </ScrollView>
     </View>
   );

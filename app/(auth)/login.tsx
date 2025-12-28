@@ -1,6 +1,5 @@
 import * as Google from 'expo-auth-session/providers/google';
 import { Link, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -11,8 +10,6 @@ import { Body, Caption, Title } from '@/components/ui/typography';
 import { BrandColors, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/auth-store';
-
-WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -29,6 +26,7 @@ export default function LoginScreen() {
   });
 
   useEffect(() => {
+    console.log('Google Auth Response:', JSON.stringify(response, null, 2));
     if (response?.type === 'success') {
       const { authentication } = response;
       if (authentication?.idToken) {
