@@ -1,10 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { FadeIn } from '@/components/ui/fade-in';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Body, Caption, Title } from '@/components/ui/typography';
 import { BrandColors, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -43,7 +42,11 @@ export default function SignupScreen() {
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
         <FadeIn>
           <View className="items-center mb-8">
-            <IconSymbol name="waveform" size={64} color={BrandColors.primary} />
+            <Image 
+              source={require('@/assets/images/logo.png')} 
+              style={{ width: 120, height: 120 }} 
+              resizeMode="contain"
+            />
             <Title className="text-3xl mt-4">Create Account</Title>
             <Body className="text-center text-secondary dark:text-secondary-dark mt-2">
               Join MediaCore today.

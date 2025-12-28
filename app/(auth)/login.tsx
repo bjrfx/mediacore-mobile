@@ -1,7 +1,7 @@
 import * as Google from 'expo-auth-session/providers/google';
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { FadeIn } from '@/components/ui/fade-in';
@@ -89,7 +89,11 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
         <FadeIn>
           <View className="items-center mb-8">
-            <IconSymbol name="waveform" size={64} color={BrandColors.primary} />
+            <Image 
+              source={require('@/assets/images/logo.png')} 
+              style={{ width: 120, height: 120 }} 
+              resizeMode="contain"
+            />
             <Title className="text-3xl mt-4">MediaCore</Title>
             <Body className="text-center text-secondary dark:text-secondary-dark mt-2">
               Welcome back! Please sign in to continue.
