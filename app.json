@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "mediacore-mobile",
-    "slug": "mediacore-mobile",
+    "slug": "mediacore",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -43,11 +43,20 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-secure-store",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "16131c32-71fa-4195-9c70-03df71648ff8"
+      }
+    },
+    "owner": "mediacore"
   }
 }

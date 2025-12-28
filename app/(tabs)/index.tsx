@@ -17,6 +17,7 @@ import { Body, Caption, Title } from '@/components/ui/typography';
 import { BrandColors, Colors } from '@/constants/theme';
 import { CATEGORIES, MOCK_DATA } from '@/data/mock';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useRouter } from 'expo-router';
 import { Dimensions, FlatList, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -31,6 +32,7 @@ const QUICK_ACTIONS = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'dark'];
@@ -72,8 +74,11 @@ export default function HomeScreen() {
                 <TouchableOpacity className="w-10 h-10 rounded-full bg-surface dark:bg-surface-dark items-center justify-center">
                   <IconSymbol name="bell" size={22} color={colors.text} />
                 </TouchableOpacity>
-                <TouchableOpacity className="w-10 h-10 rounded-full bg-surface dark:bg-surface-dark items-center justify-center">
-                  <IconSymbol name="gear" size={22} color={colors.text} />
+                <TouchableOpacity 
+                  onPress={() => router.push('/profile')}
+                  className="w-10 h-10 rounded-full bg-surface dark:bg-surface-dark items-center justify-center"
+                >
+                  <IconSymbol name="person.crop.circle" size={22} color={colors.text} />
                 </TouchableOpacity>
               </View>
             </View>

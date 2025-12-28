@@ -52,6 +52,7 @@ const MAPPING: IconMapping = {
   'arrow.down.circle.fill': 'download',
   'gear': 'settings',
   'person.circle': 'account-circle',
+  'person.crop.circle': 'account-circle',
   'bell': 'notifications',
   'bell.fill': 'notifications',
   
