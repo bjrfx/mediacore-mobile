@@ -15,13 +15,24 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Section } from '@/components/ui/section';
 import { Body, Caption, Subtitle, Title } from '@/components/ui/typography';
 import { BrandColors, Colors } from '@/constants/theme';
+import { useAudioContext } from '@/context/audio-context';
 import { MediaItem } from '@/data/mock';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { publicApi } from '@/services/api';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -59,6 +70,17 @@ export default function NewScreen() {
   const [newReleases, setNewReleases] = useState<MediaItem[]>([]);
   const [videoItems, setVideoItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const router = useRouter();
+  const { playTrack } = useAudioContext();
+
+  const handlePlay = async (item: MediaItem) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await playTrack(item);
+    router.push('/player');
+  };
 
   useEffect(() => {
     fetchData();
@@ -180,7 +202,10 @@ export default function NewScreen() {
           <View className="px-4">
             {newReleases.slice(0, 5).map((item, index) => (
               <FadeIn key={item.id} delay={200 + index * 50}>
-                <AnimatedPressable className="flex-row items-center mb-4">
+                <AnimatedPressable 
+                  onPress={() => handlePlay(item)}
+                  className="flex-row items-center mb-4"
+                >
                   {/* Artwork with "NEW" badge */}
                   <View className="relative">
                     <Image
@@ -233,7 +258,11 @@ export default function NewScreen() {
                 data={videoItems}
                 keyExtractor={(item) => `video-${item.id}`}
                 renderItem={({ item }) => (
-                  <AnimatedPressable className="mr-3" style={{ width: 200 }}>
+                  <AnimatedPressable 
+                    onPress={() => handlePlay(item)}
+                    className="mr-3" 
+                    style={{ width: 200 }}
+                  >
                     <View className="relative rounded-xl overflow-hidden">
                       <Image
                         source={{ uri: item.coverUrl }}

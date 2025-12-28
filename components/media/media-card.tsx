@@ -126,7 +126,10 @@ export function MediaCard({
             </View>
           )}
           {/* Hover overlay with play */}
-          <View className="absolute inset-0 bg-black/0 active:bg-black/30 items-center justify-center">
+          <View 
+            className="absolute inset-0 bg-black/0 active:bg-black/30 items-center justify-center"
+            pointerEvents="none"
+          >
             <View className="w-10 h-10 rounded-full bg-brand-primary/0 active:bg-brand-primary items-center justify-center" />
           </View>
         </View>
