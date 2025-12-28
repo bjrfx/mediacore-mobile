@@ -25,8 +25,7 @@ export default function LoginScreen() {
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: '818159728878-udbotiht850dorm5boqkm9tbr8tejukm.apps.googleusercontent.com', // Web Client ID
-    iosClientId: '818159728878-udbotiht850dorm5boqkm9tbr8tejukm.apps.googleusercontent.com', // Fallback to Web ID for Expo Go
-    androidClientId: '818159728878-udbotiht850dorm5boqkm9tbr8tejukm.apps.googleusercontent.com', // Fallback to Web ID for Expo Go
+    redirectUri: 'https://auth.expo.io/@mediacore/mediacore',
   });
 
   useEffect(() => {
