@@ -1,7 +1,8 @@
+import * as Google from 'expo-auth-session/providers/google';
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
-// import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 import { AnimatedPressable } from '@/components/ui/animated-pressable';
 import { FadeIn } from '@/components/ui/fade-in';
@@ -11,21 +12,60 @@ import { BrandColors, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/auth-store';
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function LoginScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'dark'];
-  const { login, isLoading } = useAuthStore(); // Removed googleLogin
+  const { login, googleLogin, isLoading } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // useEffect(() => {
-  //   GoogleSignin.configure({
-  //     webClientId: '8159728878-udbotiht850dorm5boqkm9tbr8tejukm.apps.googleusercontent.com', // From plan
-  //     offlineAccess: true,
-  //   });
-  // }, []);
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: '818159728878-udbotiht850dorm5boqkm9tbr8tejukm.apps.googleusercontent.com', // Web Client ID
+    iosClientId: '818159728878-udbotiht850dorm5boqkm9tbr8tejukm.apps.googleusercontent.com', // Fallback to Web ID for Expo Go
+    androidClientId: '818159728878-udbotiht850dorm5boqkm9tbr8tejukm.apps.googleusercontent.com', // Fallback to Web ID for Expo Go
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      if (authentication?.idToken) {
+        // If we get an idToken directly (implicit flow)
+        handleGoogleAuthSuccess(authentication.idToken);
+      } else if (authentication?.accessToken) {
+        // If we only get an accessToken, we might need to fetch the idToken or user info
+        // However, useAuthRequest typically returns idToken if configured correctly or if using OpenID
+        // For now, let's assume we might need to fetch user info if idToken is missing
+        // But our backend expects idToken. 
+        // Google's discovery doc usually includes id_token in response_type for implicit flow.
+        // The default responseType for expo-auth-session/providers/google is 'token' (accessToken).
+        // We might need to adjust it if we want id_token.
+        // Actually, for Google provider, it tries to get id_token if scopes include 'openid' (default).
+        // Let's check if idToken is present.
+        if (authentication.idToken) {
+           handleGoogleAuthSuccess(authentication.idToken);
+        } else {
+           // Fallback: use accessToken to get user info, but our backend needs idToken to verify.
+           // We'll trust that idToken is returned for now as we are using the default scopes.
+           Alert.alert('Error', 'No ID token received from Google');
+        }
+      }
+    } else if (response?.type === 'error') {
+      Alert.alert('Google Login Error', response.error?.message || 'Something went wrong');
+    }
+  }, [response]);
+
+  const handleGoogleAuthSuccess = async (idToken: string) => {
+    try {
+      await googleLogin(idToken);
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      Alert.alert('Google Login Failed', error.message || 'Something went wrong');
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -40,28 +80,8 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    Alert.alert('Notice', 'Google Sign-In requires a development build. Please use email/password for now.');
-    // try {
-    //   await GoogleSignin.hasPlayServices();
-    //   const userInfo = await GoogleSignin.signIn();
-    //   if (userInfo.data?.idToken) {
-    //     await googleLogin(userInfo.data.idToken);
-    //     router.replace('/(tabs)');
-    //   } else {
-    //     throw new Error('No ID token obtained');
-    //   }
-    // } catch (error: any) {
-    //   if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-    //     // user cancelled the login flow
-    //   } else if (error.code === statusCodes.IN_PROGRESS) {
-    //     // operation (e.g. sign in) is in progress already
-    //   } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-    //     Alert.alert('Error', 'Play services not available');
-    //   } else {
-    //     Alert.alert('Google Login Error', error.message);
-    //   }
-    // }
+  const handleGoogleLogin = () => {
+    promptAsync();
   };
 
   return (

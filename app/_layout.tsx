@@ -7,7 +7,6 @@ import "../global.css";
 import { AudioProvider } from '@/context/audio-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/auth-store';
-// import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -23,10 +22,6 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    // GoogleSignin.configure({
-    //   webClientId: '8159728878-udbotiht850dorm5boqkm9tbr8tejukm.apps.googleusercontent.com',
-    //   offlineAccess: true,
-    // });
     checkAuth();
   }, []);
 
