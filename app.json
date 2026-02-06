@@ -5,17 +5,23 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
-    "scheme": "mediacoremobile",
+    "scheme": "mediacore",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": [
-          "audio",
           "audio"
         ],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.818159728878-3l0ka1bpsk2ib1u1emvpt0ssp8e52d9k"
+            ]
+          }
+        ]
       },
       "bundleIdentifier": "com.mediacore.mediacore"
     },

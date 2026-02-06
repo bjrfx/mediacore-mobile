@@ -20,35 +20,19 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: '818159728878-udbotiht850dorm5boqkm9tbr8tejukm.apps.googleusercontent.com', // Web Client ID
-    redirectUri: 'https://auth.expo.io/@mediacore/mediacore',
+  const [, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: '818159728878-3l0ka1bpsk2ib1u1emvpt0ssp8e52d9k.apps.googleusercontent.com',
+    androidClientId: '818159728878-2u54a7cvordkurbvqgfcvgcspu2907p4.apps.googleusercontent.com',
+    scopes: ['openid', 'profile', 'email'],
   });
 
   useEffect(() => {
-    console.log('Google Auth Response:', JSON.stringify(response, null, 2));
     if (response?.type === 'success') {
-      const { authentication } = response;
-      if (authentication?.idToken) {
-        // If we get an idToken directly (implicit flow)
-        handleGoogleAuthSuccess(authentication.idToken);
-      } else if (authentication?.accessToken) {
-        // If we only get an accessToken, we might need to fetch the idToken or user info
-        // However, useAuthRequest typically returns idToken if configured correctly or if using OpenID
-        // For now, let's assume we might need to fetch user info if idToken is missing
-        // But our backend expects idToken. 
-        // Google's discovery doc usually includes id_token in response_type for implicit flow.
-        // The default responseType for expo-auth-session/providers/google is 'token' (accessToken).
-        // We might need to adjust it if we want id_token.
-        // Actually, for Google provider, it tries to get id_token if scopes include 'openid' (default).
-        // Let's check if idToken is present.
-        if (authentication.idToken) {
-           handleGoogleAuthSuccess(authentication.idToken);
-        } else {
-           // Fallback: use accessToken to get user info, but our backend needs idToken to verify.
-           // We'll trust that idToken is returned for now as we are using the default scopes.
-           Alert.alert('Error', 'No ID token received from Google');
-        }
+      const idToken = response.authentication?.idToken;
+      if (idToken) {
+        handleGoogleAuthSuccess(idToken);
+      } else {
+        Alert.alert('Error', 'No ID token received from Google');
       }
     } else if (response?.type === 'error') {
       Alert.alert('Google Login Error', response.error?.message || 'Something went wrong');
@@ -158,7 +142,7 @@ export default function LoginScreen() {
 
             <View className="flex-row justify-center mt-6">
               <Body className="text-secondary dark:text-secondary-dark">
-                Don't have an account?{' '}
+                Don’t have an account?{' '}
               </Body>
               <Link href="/(auth)/signup" asChild>
                 <TouchableOpacity>
